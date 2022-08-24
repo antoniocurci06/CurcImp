@@ -1,0 +1,60 @@
+GAMMAR
+
+/* Base */
+<digit> ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 
+<natural> ::= <digit> | <digit> <natural> 
+<integer> ::= -<natural> | <natural> 
+<lower> ::= a – z
+<upper> ::= A – Z
+<char> ::= '<upper>' | '<lower>' 
+<string> = '<char><string>' 
+<underscore> = '_'
+<null> ::= null
+<true> ::= true
+<false> ::= false
+<identifier> ::= <string><identifier> | <string><natural> | <string><natural><identifier> | <string><underscore><natural> | 
+
+/* Commands */
+command ::= <arDeclaration> 
+            | <boolDeclararation> 
+            | <strDeclararation>
+            | <chrDeclararation>
+            | <stackDeclaration> 
+            | <boolAssignment>
+            | <chrAssignment>
+            | <strAssignment>
+            | <stackAssignment>
+            | <ifElse>
+            | <whiledo>
+            | <skip>
+
+<program> ::= <command> | <command> <program>
+
+<arDeclaration> ::= 'int' <identifier> '=' <arExp> | 'int' <identifier>
+<boolDeclaration> ::= 'bool' <identifier> '=' <boolExp> | 'bool' <identifier>
+<chrDeclaration> ::= 'char' <identifier> '=' <chrExp> | 'char' <identifier>
+<strDeclaration> ::= 'string' <identifier> '=' <strExp> | 'string' <identifier>
+
+<arAssignment> ::= <identifier> '=' <arExp>
+<boolAssignment> ::= <identifier> '=' <boolExp>
+<chrAssignment> ::=  <identifier> '=' <chrExp>
+<strAssignment> ::= <identifier> '=' <strExp>
+
+
+ifElse ::= 'if' '('<boolExp>')' '{' <program> '}' | 'if' '('<boolExp>')' '{' <program>'}' 'else' '{' <program> '}'
+
+<whiledo> = <while>'('<boolExp>')'<do>'{'<program>'}'
+
+<skip> = 'skip'
+
+/* Arithmetic Expressions */
+<arExp> ::= <arTerm> + <arExp> | <arTerm> - <arExp> | <arTerm>
+<arTerm> ::= <arFactor> * <arTerm> | <arTactor> : <arTerm> | <arFactor>^<arTerm> | <arFactor>
+<arFactor> ::= (<arExp>) |-<arFactor> | <identifier> | <integer>
+
+/* Boolean Expressions */
+
+
+/* Char Expressions */
+
+/* String Expressions */
