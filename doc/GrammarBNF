@@ -51,7 +51,7 @@ GAMMAR
 
 <skip> = 'skip'
 
-/* Arithmetic Expressions */
+/*Arithmetic Expressions */
 <arExp> ::= <arTerm> + <arExp> | <arTerm> - <arExp> | <arTerm>
 <arTerm> ::= <arFactor> * <arTerm> | <arTactor> : <arTerm> | <arFactor>^<arTerm> | <arFactor>
 <arFactor> ::= (<arExp>) |-<arFactor> | <identifier> | <integer>
