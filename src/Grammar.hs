@@ -1,5 +1,10 @@
+-- Antonio Curci
+-- Mat. 761049
+-- CurcIMP, FMCS 2021-2022
+
 module Grammar where
 
+-- Values
 data Value = 
     int Int
     | bool Bool
@@ -22,11 +27,13 @@ data ArExp =              -- all expression that give Integer as result
         | power ArExp ArExp
         deriving Show
 
+-- Stack Expressions
 data StackExp = 
     stack [ArExp]
     | stackId String
 
-data BoolExp =                -- all expression that give Bool as result
+-- Boolean Expressions
+data BoolExp =
           bool Bool
         | boolId String
         | lessThan ArExp ArExp
@@ -40,14 +47,18 @@ data BoolExp =                -- all expression that give Bool as result
         | NOT BoolExp
         deriving Show
 
+-- Commands
 data Command =
     skip
-    | IfElse BoolExp [Command] [Command] -- probabile lista di comandi
+    | IfElse BoolExp [Command] [Command] 
 	| Whiledo BoolExp [Command]
 	| ArAssignment String ArExp
     | BoolAssignment String BoolExp  
 	| ArDeclaration String ArExp
     | BoolDeclaration String BoolExp
     | stackDeclaration String ArExp 
-    | stackAssignment String StackExp     -- array di tipo intero solo
+    | stackAssignment String StackExp     
 	deriving Show
+
+-- Program
+type Program = [Command]
