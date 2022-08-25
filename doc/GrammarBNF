@@ -6,16 +6,16 @@ GAMMAR
 <integer> ::= -<natural> | <natural> 
 <lower> ::= a – z
 <upper> ::= A – Z
-<char> ::= '<upper>' | '<lower>' 
-<string> = '<char><string>' 
-<underscore> = '_'
+<char> ::= '`'<upper> '`' | '`' <lower> '`' 
+<string> = '`'<upper><string>'`' | <lower><string>
+<specialChar> = '_' | '?' | '!' | '_'<specialChar> | '?'<specialChar> | '!'<specialChar>
 <null> ::= null
 <true> ::= true
 <false> ::= false
-<identifier> ::= <string><identifier> | <string><natural> | <string><natural><identifier> | <string><underscore><natural> | 
+<identifier> ::= <string><identifier> | <string><natural> | <string><natural><identifier> | <string><specialChar><natural> 
 
 /* Commands */
-command ::= <arDeclaration> 
+<command> ::= <arDeclaration> 
             | <boolDeclararation> 
             | <strDeclararation>
             | <chrDeclararation>
@@ -24,6 +24,7 @@ command ::= <arDeclaration>
             | <chrAssignment>
             | <strAssignment>
             | <stackAssignment>
+            | <stackOperation>
             | <ifElse>
             | <whiledo>
             | <skip>
@@ -32,16 +33,19 @@ command ::= <arDeclaration>
 
 <arDeclaration> ::= 'int' <identifier> '=' <arExp> | 'int' <identifier>
 <boolDeclaration> ::= 'bool' <identifier> '=' <boolExp> | 'bool' <identifier>
-<chrDeclaration> ::= 'char' <identifier> '=' <chrExp> | 'char' <identifier>
+<chrDeclaration> ::= 'char' <identifier> '=' <charExp> | 'char' <identifier>
 <strDeclaration> ::= 'string' <identifier> '=' <strExp> | 'string' <identifier>
+<strDeclaration> ::= 'stack' <identifier> '=' <stackExp> | 'stack' <identifier>
 
 <arAssignment> ::= <identifier> '=' <arExp>
 <boolAssignment> ::= <identifier> '=' <boolExp>
 <chrAssignment> ::=  <identifier> '=' <chrExp>
 <strAssignment> ::= <identifier> '=' <strExp>
+<stackAssignment> ::= <identifier> '=' <stackExp>
 
+<stackOperation> ::= 'push('<identifier>','<string>')' | 'push('<identifier>','<integer>')' | 'push('<identifier>','<true>')' | 'push('<identifier>','<false>')' | 'push('<identifier>','<char>')' | 'pop('<identifier>')' 
 
-ifElse ::= 'if' '('<boolExp>')' '{' <program> '}' | 'if' '('<boolExp>')' '{' <program>'}' 'else' '{' <program> '}'
+<ifElse> ::= 'if' '('<boolExp>')' '{' <program> '}' | 'if' '('<boolExp>')' '{' <program>'}' 'else' '{' <program> '}'
 
 <whiledo> = <while>'('<boolExp>')'<do>'{'<program>'}'
 
@@ -53,8 +57,16 @@ ifElse ::= 'if' '('<boolExp>')' '{' <program> '}' | 'if' '('<boolExp>')' '{' <pr
 <arFactor> ::= (<arExp>) |-<arFactor> | <identifier> | <integer>
 
 /* Boolean Expressions */
-
+<boolExp> ::= <boolTerm> 'AND' <boolExp> | <boolTerm>
+<boolTerm> ::= <boolTerm> 'OR' <boolExp> | <boolFactor>
+<boolFactor> ::= <true> | <false> | <identifier> | (<boolExp>) | '~'<boolExp> | <boolExp>'=='<boolExp> | <boolExp>'=\='<boolExp> | <boolExp>'>='<boolExp> |<boolExp>'<='<boolExp> | <boolExp>'<'<boolExp> | <boolExp>'>'<boolExp> 
 
 /* Char Expressions */
+<charExp> ::= <identifier> | <char>
 
 /* String Expressions */
+<strExp> ::= <strTerm> + <strExp> | <strTerm> - <strExp> | <strTerm>
+<strFactor> ::= <identifier> | <string>
+
+/* Stack Expressions */
+<stackExp> ::= ::= <identifier> | <stackOperation>
