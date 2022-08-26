@@ -16,7 +16,7 @@ data Value =
     deriving Show
 
 -- Arithmetic Expressions
-data ArExp =              -- all expression that give Integer as result
+data ArExp =
         constant Int
         | arId String
         | stackId String ArExp   
