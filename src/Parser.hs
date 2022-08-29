@@ -254,4 +254,4 @@ boolFactor =
               symbol "!="
               a2 <- aExp 
               return (notEqualTo a1 a2)
-    <|> (BoolVariable <$> identifier) 
+    <|> (boolId <$> identifier) 
