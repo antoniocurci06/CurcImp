@@ -70,7 +70,7 @@ GAMMAR in BNF
 
 /* String Expressions */
 <strExp> ::= <strTerm> + <strExp> | <strTerm> - <strExp> | <strTerm>
-<strFactor> ::= <identifier> | <string>
+<strTerm> ::= <identifier> | <string>
 
 /* Stack Expressions */
 <stackExp> ::= ::= <identifier> | <stackOperation>

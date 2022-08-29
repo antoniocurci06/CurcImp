@@ -32,6 +32,12 @@ data StackExp =
     stack [ArExp]
     | stackId String
 
+data stringExp = 
+    string [stringExp]
+    | stringId String
+    | concatenation stringExp stringExp
+
+
 -- Boolean Expressions
 data BoolExp =
           bool Bool
@@ -58,6 +64,8 @@ data Command =
     | BoolDeclaration String BoolExp
     | stackDeclaration String ArExp 
     | stackAssignment String StackExp     
+    | push String ArExp
+    | pop String ArExp
 	deriving Show
 
 -- Program
