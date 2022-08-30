@@ -1,8 +1,9 @@
+module Grammar where
 -- Antonio Curci
 -- Mat. 761049
 -- CurcIMP, FMCS 2021-2022
 
-module Grammar where
+
 
 -- Values
 data Value = 
@@ -42,7 +43,7 @@ data BoolExp =
           bool Bool
         | boolId String
         | lessThan ArExp ArExp
-        | greaterThen ArExp ArExp
+        | greaterThan ArExp ArExp
         | equalTo ArExp ArExp
         | notEqualTo ArExp ArExp
         | lessEqualThan ArExp ArExp
@@ -55,12 +56,12 @@ data BoolExp =
 -- Commands
 data Command =
     skip
-    | IfElse BoolExp [Command] [Command] 
-	| Whiledo BoolExp [Command]
-	| ArAssignment String ArExp
-    | BoolAssignment String BoolExp  
-	| ArDeclaration String ArExp
-    | BoolDeclaration String BoolExp
+    | ifElse BoolExp [Command] [Command] 
+	| whiledo BoolExp [Command]
+	| arAssignment String ArExp
+    | boolAssignment String BoolExp  
+	| arDeclaration String ArExp
+    | boolDeclaration String BoolExp
     | stackDeclaration String ArExp 
     | stackAssignment String StackExp     
     | push String ArExp
