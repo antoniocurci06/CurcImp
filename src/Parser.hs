@@ -11,45 +11,46 @@ newtype Parser a = P (String -> [(a,String)])
 
 instance Functor Parser where
 -- fmap :: (a -> b) -> Parser a -> Parser b 
- fmap g p = P (\inp -> case parse p inp of
-    [] -> []
-    [(v,out)] -> [(g v, out)])
+fmap g p = P (\inp -> case parse p inp of
+  [] -> []
+  [(v,out)] -> [(g v, out)])
 
 instance Applicative Parser where 
 -- pure :: a -> Parser a
-    pure v = P (\inp -> [(v,inp)])
-    
-    -- <*> :: Parser (a -> b) -> Parser a -> Parser b 
-    pg <*> px = P (\inp -> case parse pg inp of
-        [] -> []
-        [(g,out)] -> parse (fmap g px) out)
+pure v = P (\inp -> [(v,inp)])
+-- <*> :: Parser (a -> b) -> Parser a -> Parser b 
+pg <*> px = P (\inp -> case parse pg inp of
+          [] -> []
+          [(g,out)] -> parse (fmap g px) out)
 
 instance Monad Parser where
 -- (>>=) :: Parser a -> (a -> Parser b) -> Parser b 
 p >>= f = P (\inp -> case parse p inp of
-        [] -> []
-        [(v,out)] -> parse (f v) out)
+  [] -> []
+  [(v,out)] -> parse (f v) out)
 
 
-class Monad f => Alternative f where  
+class Monad f => Alternative f where
   empty :: f a
   (<|>) :: f a -> f a -> f a
+
   many :: f a -> f [a]
   some :: f a -> f [a]
   many x = some x <|> pure []
   some x = pure (:) <*> x <*> many x
   chain :: f a -> f (a -> a -> a) -> f a          -- chain operator
   chain p op = do a <- p; rest a
-        where
-            rest a = (do f <- op; b <- p; rest (f a b)) <|> return a
+    where
+      rest a = (do f <- op; b <- p; rest (f a b)) <|> return a
 
-class Applicative f => Alternative f where 
-    empty :: f a
-    (<|>) :: f a -> f a -> f a
-    many :: f a -> f [a]
-    some :: f a -> f [a]
-    many x = some x <|> pure []
-    some x = pure (:) <*> x <*> many x
+--class Applicative f => Alternative f where 
+--  empty :: f a
+  --(<|>) :: f a -> f a -> f a
+  --many :: f a -> f [a]
+  --some :: f a -> f [a]
+
+  --many x = some x <|> pure []
+--  some x = pure (:) <*> x <*> many x
 
 instance Alternative Parser where 
     -- empty :: Parser a
@@ -69,13 +70,14 @@ item =
         (x : xs) -> [(x, xs)]) 
 
 -- General Operator
-sat :: (Char -> Bool) -> Parser 
-Char sat p = do x <- item
-if p x then return x else empty
+sat :: (Char -> Bool) -> Parser Char 
+sat p = do 
+      x <- item
+      if p x then return x else empty
 
 -- Digits handling
-digit :: [Char]
-digit = ['0' .. '9']
+digitSet :: [Char]
+digitSet = ['0' .. '9']
 
 digit :: Parser Char 
 digit = sat isDigit
@@ -85,8 +87,8 @@ isDigit c = c `elem` digits
 
 
 -- Chars handling
-lower :: [Char]
-lower = ['a' .. 'z']
+lowerSet :: [Char]
+lowerSet = ['a' .. 'z']
 
 lower :: Parser Char 
 lower = sat isLower
@@ -94,8 +96,8 @@ lower = sat isLower
 isLower :: Char -> Bool
 isLower c = c `elem` lower
 
-upper :: [Char] 
-upper = ['A' .. 'Z']
+upperSet :: [Char] 
+upperSet = ['A' .. 'Z']
 
 upper :: Parser Char 
 upper = sat isUpper
@@ -103,8 +105,8 @@ upper = sat isUpper
 isUpper :: Char -> Bool
 isUpper c = c `elem` upper
 
-letter :: Parser Char 
-letter = sat isAlpha
+letterSet :: Parser Char 
+letterSet = sat isAlpha
 
 isAlpha :: Char -> Bool
 isAlpha = c `elem` upper || c `elem` lower
@@ -420,5 +422,22 @@ pop =
     return (pop i)
 
 
+parse :: String -> ([Command], String)
+parse s = case p s of
+  [] -> ([], "")
+  [(c, s)] -> (c, s)
+  where
+    (P p) = program
+
+
+parseFailed :: ([Command], String) -> Bool
+parseFailed (_, "") = False
+parseFailed (_, _) = True
+
+getParsedCommands :: ([Command], String) -> [Command]
+getParsedCommands (c, _) = c
+
+getRemainingInput :: ([Command], String) -> String
+getRemainingInput (_, s) = s
 
 

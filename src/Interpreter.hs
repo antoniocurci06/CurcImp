@@ -1,4 +1,4 @@
-module Integererpreter where
+module Interpreter where
 import Grammar
 import Parser
 

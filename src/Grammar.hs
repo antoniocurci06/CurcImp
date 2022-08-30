@@ -47,11 +47,11 @@ data BoolExp =
 -- Commands
 data Command =
     Skip
-    | IfElse BoolExp [Command] [Command] 
-	| Whiledo BoolExp [Command]
-	| ArAssignment String ArExp
+    | IfElse BoolExp [Command] [Command]
+    | Whiledo BoolExp [Command]
+    | ArAssignment String ArExp
     | BoolAssignment String BoolExp  
-	| ArDeclaration String ArExp
+    | ArDeclaration String ArExp
     | BoolDeclaration String BoolExp
     | StackDeclaration String ArExp 
     | StackAssignment String ArExp ArExp     
