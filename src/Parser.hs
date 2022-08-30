@@ -186,25 +186,25 @@ nats = do
     return (n:ns)
 
 -- Arithmetic Expressions
-aExp  :: Parser ArExp         
-aExp = do chain aTerm op
+arExp  :: Parser ArExp         
+arExp = do chain arTerm op
     where                        
       op = 
-          (do symbol "+"; return sum)
-          <|> do symbol "-"; return difference 
+          (do symbol "+"; return Sum)
+          <|> do symbol "-"; return Difference 
 
-aTerm :: Parser ArExp       
-aTerm = do chain aFactor op     
+arTerm :: Parser ArExp       
+arTerm = do chain arFactor op     
     where 
       op = 
-        (do symbol "*"; return multiplied_by)
-        <|> (do symbol "/"; return divided_by)
-        <|> do symbol "^"; return power
+        (do symbol "*"; return Multiplied_by)
+        <|> (do symbol "/"; return Divided_by)
+        <|> do symbol "^"; return Power
 
 stringExp :: Parser StringExp
 stringExp = 
   do
-    symbol "+"; return concatenation
+    symbol "+"; return Concatenation
 
 
 -- !!! ARRAY DA VEDERE STACK
@@ -215,13 +215,13 @@ arFactor = do
             i <- identifier     
             do
                 symbol "["      
-                n <- aExp  
+                n <- arExp  
                 symbol "]"
-                return (ArrVariable i n)
-                <|> return (ArithVariable i) 
+                return (Stack i n)
+                <|> return (ArId i) 
         <|> do
             symbol "("                   
-            a <- aExp 
+            a <- arExp 
             symbol ")"
             return a
 
@@ -229,10 +229,10 @@ boolFactor :: Parser BoolExpr
 boolFactor =
   do
     symbol "True"
-    return (bool True)
+    return (Bool True)
     <|> do
       symbol "False"
-      return (bool False)
+      return (Bool False)
     <|> do
       symbol "Not"
       Not <$> bExp
@@ -242,32 +242,32 @@ boolFactor =
       symbol ")"
       return b
     <|> do 
-        a1 <- aExp 
+        a1 <- arExp 
         do
             symbol "<"
-            a2 <- aExp 
-            return (lessThan a1 a2)
+            a2 <- arExp 
+            return (LessThan a1 a2)
             <|> do
               symbol ">"
-              a2 <- aExp 
-              return (greaterThen a1 a2)
+              a2 <- arExp 
+              return (GreaterThan a1 a2)
             <|> do
               symbol "<="
-              a2 <- aExp 
-              return (lessEqualThan a1 a2)
+              a2 <- arExp 
+              return (LessEqualThan a1 a2)
             <|> do
               symbol ">="
-              a2 <- aExp 
-              return (greaterEqualThan a1 a2)
+              a2 <- arExp 
+              return (GreaterEqualThan a1 a2)
             <|> do
               symbol "=="
-              a2 <- aExp 
-              return (equalTo a1 a2)
+              a2 <- arExp 
+              return (EqualTo a1 a2)
             <|> do
               symbol "!="
-              a2 <- aExp 
-              return (notEqualTo a1 a2)
-    <|> (boolId <$> identifier) 
+              a2 <- arExp 
+              return (NotEqualTo a1 a2)
+    <|> (BoolId <$> identifier) 
 
 -- Commands declared in the Grammar.hs file
 command :: Parser Command
@@ -293,7 +293,7 @@ arDeclaration =
     symbol "int"             
     i <- identifier
     symbol "="
-    r <- arDeclaration i <$> aExp      
+    r <- arDeclaration i <$> arExp      
     return r
 
 boolDeclaration :: Parser Command
@@ -308,10 +308,10 @@ boolDeclaration =
 stackDeclaration  :: Parser Command
 stackDeclaration  =
   do
-    symbol "stack"             -- stack id[n];   
+    symbol "stack"       
     i <- identifier
     symbol "["
-    j <- aExp 
+    j <- arExp 
     symbol "]"
     return (stackDeclaration i j)  
       
@@ -321,7 +321,7 @@ arAssignment =
   do
     i <- identifier
     symbol "="
-    r <- arAssignment i <$> aExp 
+    r <- arAssignment i <$> arExp 
     return r
     
 boolAssignment  :: Parser Command
@@ -338,18 +338,18 @@ stackAssignment  =
     i <- identifier  
     do           
       symbol "["
-      j <- aExp 
+      j <- arExp 
       symbol "]"
       symbol "="
-      r <- stackAssignment  i j <$> aExp 
+      r <- stackAssignment  i j <$> arExp 
 
       return r
       <|>
         do 
           symbol "="
           symbol "["
-          j <- aExp
-          k <- many (do symbol ","; aExp)
+          j <- arExp
+          k <- many (do symbol ","; arExp)
           symbol "]"
     
           return (ArrFullAssign i (stackId (j:k)))
@@ -407,7 +407,7 @@ push =
     symbol "push("
     i <- identifier
     symbol ","
-    a <- aExp
+    a <- arExp
     symbol ")"
     return (push i a)
 
