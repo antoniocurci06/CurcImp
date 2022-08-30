@@ -12,7 +12,6 @@ data Value =
     | string String
     | stack[Int]
     | stack[String]
-    | stack[Int]
     deriving Show
 
 -- Arithmetic Expressions
