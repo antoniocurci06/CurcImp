@@ -15,31 +15,33 @@ type Environment = [Variable]
 emptyState :: Environment
 emptyState = empty
 
-arEvaluation :: Environment -> arExp -> Maybe Integer
+arEvaluation :: Environment -> ArExp -> Maybe Int
 arEvaluation _ (Constant i) = Just i  
 arEvaluation env (ArId s) =
-  case get env s of
+  case value s of
     Just (T_Integer v) -> Just v
     Just _ -> error "Mismatching Types!"
     Nothing -> error "No variable was found!"
 
 arEvaluation env (Stack s i) =
-  case get env s of
+  case value s of
     Just (T_Stack a) -> Just (readArray a j)
       where Just j = arEvaluation env i 
     Just _ -> error "Mismatching Types!"
     Nothing -> error "No variable was found!"
-arEvaluation env (Sum a b) = (+) <$> arEvaluation env a <*> arEvaluation env b --Applicative
+
+arEvaluation env (Sum a b) = (+) <$> arEvaluation env a <*> arEvaluation env b
 arEvaluation env (Difference a b) = (-) <$> arEvaluation env a <*> arEvaluation env b
 arEvaluation env (Multiplied_by a b) = (*) <$> arEvaluation env a <*> arEvaluation env b
 
-boolEvaluation :: Environment -> boolExp -> Maybe Bool
+boolEvaluation :: Environment -> BoolExp -> Maybe Bool
 boolEvaluation _ (T_Boolean b) = Just b
 boolEvaluation env (BoolId s) =
-  case get env s of
+  case value s of
     Just (T_Boolean v) -> Just v
     Just _ -> error "Mismatching Types!"
     Nothing -> error "No variable was found!"
+
 boolEvaluation env (LessThan a b) = pure (<) <*> (arEvaluation env a) <*> (arEvaluation env b)
 boolEvaluation env (GreaterThan a b) = pure (>) <*> (arEvaluation env a) <*> (arEvaluation env b)
 boolEvaluation env (EqualTo a b) = pure (==) <*> (arEvaluation env a) <*> (arEvaluation env b)
@@ -50,7 +52,6 @@ boolEvaluation env (AND a b) = pure (&&) <*> (boolEvaluation env a) <*> (boolEva
 boolEvaluation env (OR a b) = pure (||) <*> (boolEvaluation env a) <*> (boolEvaluation env b)
 boolEvaluation env (NOT a) = not <$> boolEvaluation env a      
 
-
 programExec :: Environment -> [Command] -> Environment
 
 programExec progExe [] = progExe
@@ -58,26 +59,26 @@ programExec progExe [] = progExe
 programExec progExe (Skip : cs) = programExec progExe cs
 programExec progExe ((ArDeclaration s ex) : cs) =
   case arEvaluation progExe ex of
-    Just ex' -> case get progExe s of
+    Just ex' -> case ex s of
       Just _ -> error "Another Declaration Was Found!"
-      Nothing -> programExec (insert progExe s (Integer ex')) cs
+      Nothing -> programExec (insert progExe s (T_Integer ex')) cs
     Nothing -> error "Arithmetic Expression Was Invalid"
 
 programExec progExe ((BoolDeclaration s ex) : cs) =
   case boolEvaluation progExe ex of
-    Just ex' -> case get progExe s of
+    Just ex' -> case ex s of
       Just _ -> error "Another Declaration Was Found!"
       Nothing -> programExec (insert progExe s (T_Boolean ex')) cs
     Nothing -> error "Boolean Expression Was Invalid"
 
 programExec progExe ((ArDeclaration s i) : cs) =
-  case get progExe s of
+  case arEvaluation progExe s of
     Just _ -> error "Another Declaration Was Found!"
     Nothing -> programExec (insert progExe s (stack (stackDeclaration j))) cs
     where Just j = arEvaluation progExe i
 
 programExec progExe ((ArAssignment s ex) : cs) =
-  case get progExe s of
+  case ArAssignment progExe s of
     Just (T_Integer _) -> programExec (insert progExe s (T_Integer ex')) cs
       where
         Just ex' = arEvaluation progExe ex
@@ -86,7 +87,7 @@ programExec progExe ((ArAssignment s ex) : cs) =
 
 programExec progExe ((BoolAssignment s ex) : cs) =
   case get progExe s of
-    Just (T_Boolean _) -> programExec (insert progExe s (bool ex')) cs
+    Just (T_Boolean _) -> programExec (insert progExe s (T_Boolean ex')) cs
       where
         Just ex' = boolEvaluation progExe ex
     Just _ -> error "Mismatching Types!"
