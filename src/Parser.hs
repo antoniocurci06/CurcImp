@@ -77,8 +77,8 @@ class Monad f => Alternative f where
 -- General Operator
 sat :: (Char -> Bool) -> Parser Char 
 sat p = do 
-      x <- item
-      if p x then return x else empty
+  x <- item
+  if p x then return x else empty
 
 -- Digits handling
 digitSet :: [Char]
@@ -110,16 +110,16 @@ isUpper :: Char -> Bool
 isUpper c = elem c upperSet
 
 letterSet :: Parser Char 
-letterSet = sat isAlpha
+letterSet = sat isLetter
 
-isAlpha :: Char -> Bool
-isAlpha c = elem c upper || elem c lower
+isLetter :: Char -> Bool
+isLetter c = elem c upperSet || elem c lowerSet
+
+isAlphaNum :: Char -> Bool
+isAlphaNum c = isLetter c || isDigit c
 
 alphanum :: Parser Char 
 alphanum = sat isAlphaNum
-
-isAlphanum :: Char -> Bool
-isAlphanum c = elem c upper || elem c lower || elem c digitSet
 
 char :: Char -> Parser Char 
 char x = sat (== x)
@@ -169,7 +169,8 @@ isSpace x = elem x spaceSet
 token :: Parser a -> Parser a 
 token p = do 
     space
-    v <- p space 
+    v <- p 
+    space 
     return v
 
 identifier :: Parser String 
@@ -186,11 +187,11 @@ symbol xs = token (string xs)
 
 nats :: Parser [Int] 
 nats = do 
-    symbol "["
-    n <- natural
-    ns <- many (do symbol "," natural) 
-    symbol "]"
-    return (n:ns)
+      symbol "["
+      n <- natural
+      ns <- many (do symbol "," natural) 
+      symbol "]"
+      return (n:ns)
 
 -- Arithmetic Expressions
 arExp  :: Parser ArExp         
@@ -232,6 +233,16 @@ arFactor = do
             symbol ")"
             return a
 
+boolExp :: Parser BoolExp
+boolExp = 
+  do
+    symbol "And"
+    return AND
+    do
+      symbol "Or"
+      return OR
+
+    
 boolFactor :: Parser BoolExp
 boolFactor =
   do
@@ -240,14 +251,14 @@ boolFactor =
     <|> do
       symbol "False"
       return (Bool False)
-    <|> do
-      symbol "Not"
-      Not <$> bExp
-    <|> do
-      symbol "("
-      b <- bExp
-      symbol ")"
-      return b
+      <|> do
+        symbol "Not"
+        NOT <$> boolExp
+        <|> do
+          symbol "("
+          b <- boolExp
+          symbol ")"
+          return b
     <|> do 
         a1 <- arExp 
         do
@@ -283,7 +294,7 @@ command =
     <|> boolDeclaration 
     <|> arDeclaration 
     <|> arAssignment
-    <|> BoolAssignmentment 
+    <|> boolAssignment
     <|> stackAssignment
     <|> stackDeclaration
     <|> ifElse
@@ -300,7 +311,7 @@ arDeclaration =
     symbol "int"             
     i <- identifier
     symbol "="
-    r <- arDeclaration i <$> arExp      
+    r <- ArDeclaration i <$> arExp      
     return r
 
 boolDeclaration :: Parser Command
@@ -309,7 +320,7 @@ boolDeclaration =
     symbol "bool"             -- bool id=True;
     i <- identifier
     symbol "="
-    r <- boolDeclaration i <$> bExp
+    r <- BoolDeclaration i <$> boolExp
     return r
 
 stackDeclaration  :: Parser Command
@@ -320,7 +331,7 @@ stackDeclaration  =
     symbol "["
     j <- arExp 
     symbol "]"
-    return (stackDeclaration i j)  
+    return (StackDeclaration i j)  
       
 
 arAssignment :: Parser Command
@@ -328,7 +339,7 @@ arAssignment =
   do
     i <- identifier
     symbol "="
-    r <- arAssignment i <$> arExp 
+    r <- ArAssignment i <$> arExp 
     return r
     
 boolAssignment  :: Parser Command
@@ -336,7 +347,7 @@ boolAssignment  =
   do
     i <- identifier
     symbol "="
-    r <- boolAssignment  i <$> bExp
+    r <- BoolAssignment  i <$> boolExp
     return r
 
 stackAssignment  :: Parser Command
@@ -348,28 +359,28 @@ stackAssignment  =
       j <- arExp 
       symbol "]"
       symbol "="
-      r <- stackAssignment  i j <$> arExp 
+      r <- StackAssignment  i j <$> arExp 
 
       return r
-      <|>
-        do 
-          symbol "="
-          symbol "["
-          j <- arExp
-          k <- many (do symbol ","; arExp)
-          symbol "]"
+--      <|>
+  --      do 
+    --      symbol "="
+      --    symbol "["
+        --  j <- arExp
+          --k <- many (do symbol ","; arExp)
+          --symbol "]"
     
-          return (ArrFullAssign i (stackId (j:k)))
-      <|>
-        do 
-          symbol "["
-          symbol "]"
-          symbol "="
-          x <- identifier
-          symbol "["
-          symbol "]"
+     --     return (arrFullAssign i (stackId (j:k)))
+   --   <|>
+       -- do 
+         -- symbol "["
+        --  symbol "]"
+         -- symbol "="
+          --x <- identifier
+          --symbol "["
+          --symbol "]"
     
-          return (ArrFullAssign i (stackId x)) 
+          --return (arrFullAssign i (stackId x)) 
 
 skip  :: Parser Command
 skip  =
@@ -382,7 +393,7 @@ ifElse =
   do
     symbol "if"
     symbol "("
-    b <- bExp
+    b <- boolExp
     symbol ")"
     symbol "{"
     thenP <- program
@@ -392,9 +403,9 @@ ifElse =
       symbol "{"
       elseP <- program
       symbol "}"
-      return (ifElse b thenP elseP)
+      return (IfElse b thenP elseP)
       <|> do
-        return (ifElse b thenP [Skip])
+        return (IfElse b thenP [Skip])
 
 whiledo :: Parser Command
 whiledo =
@@ -403,10 +414,10 @@ whiledo =
     p <- program
     symbol "}"
     symbol "while("
-    b <- bExp
+    b <- boolExp
     symbol ")"
 
-    return (whiledo b p)
+    return (Whiledo b p)
 
 push :: Parser Command
 push =
@@ -416,7 +427,7 @@ push =
     symbol ","
     a <- arExp
     symbol ")"
-    return (push i a)
+    return (Push i a)
 
 pop :: Parser Command
 pop =
@@ -424,7 +435,7 @@ pop =
     symbol "pop("
     i <- identifier
     symbol ")"
-    return (pop i)
+    return (Pop i)
 
 
 --parse :: String -> ([Command], String)
