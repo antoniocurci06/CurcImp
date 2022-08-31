@@ -185,13 +185,13 @@ integer = token int
 symbol :: String -> Parser String 
 symbol xs = token (string xs)
 
-nats :: Parser [Int] 
+{-- nats :: Parser [Int] 
 nats = do 
       symbol "["
       n <- natural
       ns <- many (do symbol "," natural) 
       symbol "]"
-      return (n:ns)
+      return (n:ns)--}
 
 -- Arithmetic Expressions
 arExp  :: Parser ArExp         
@@ -209,10 +209,14 @@ arTerm = do chain arFactor op
         <|> (do symbol "/"; return Divided_by)
         <|> do symbol "^"; return Power
 
-stringExp :: Parser StringExp
+{--stringExp :: Parser StringExp
 stringExp = 
+  (StringID <$>
+   String)
   do
-    symbol "+"; return Concatenation
+    symbol "+"
+    return Concatenation
+--}
 
 
 -- !!! ARRAY DA VEDERE STACK
@@ -234,14 +238,16 @@ arFactor = do
             return a
 
 boolExp :: Parser BoolExp
-boolExp = 
-  do
-    symbol "And"
-    return AND
-    do
-      symbol "Or"
-      return OR
+boolExp = chain boolTerm op
+  where op = do
+            symbol "Or"
+            return OR
 
+boolTerm :: Parser BoolExp
+boolTerm = chain boolFactor op
+  where op = do
+            symbol "And"
+            return AND
     
 boolFactor :: Parser BoolExp
 boolFactor =

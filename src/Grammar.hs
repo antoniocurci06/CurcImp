@@ -56,7 +56,7 @@ data Command =
     | StackDeclaration String ArExp 
     | StackAssignment String ArExp ArExp     
     | Push String ArExp
-    | Pop String ArExp
+    | Pop String
 
 -- Program
 type Program = [Command]

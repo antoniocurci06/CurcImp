@@ -7,8 +7,7 @@ import Grammar
 import Parser
 
 -- Each variable has two fields: name and value.
-data Variable = Variable {name  :: String,
-                          value :: Value } deriving Show
+data Variable = Variable {name  :: String,  value :: Value } deriving Show
 
 -- Environment
 type Environment = [Variable]
@@ -16,7 +15,7 @@ type Environment = [Variable]
 emptyState :: Environment
 emptyState = empty
 
-arEvaluation :: Environment -> AExp -> Maybe Integer
+arEvaluation :: Environment -> arExp -> Maybe Integer
 arEvaluation _ (Constant i) = Just i  
 arEvaluation env (ArId s) =
   case get env s of
@@ -27,26 +26,26 @@ arEvaluation env (ArId s) =
 arEvaluation env (Stack s i) =
   case get env s of
     Just (T_Stack a) -> Just (readArray a j)
-      where Just j = arfEvaluation env i 
+      where Just j = arEvaluation env i 
     Just _ -> error "Mismatching Types!"
     Nothing -> error "No variable was found!"
-arEvaluation env (Add a b) = (+) <$> arEvaluation env a <*> arEvaluation env b --Applicative
-arEvaluation env (Sub a b) = (-) <$> arEvaluation env a <*> arEvaluation env b
-arEvaluation env (Mul a b) = (*) <$> arEvaluation env a <*> arEvaluation env b
+arEvaluation env (Sum a b) = (+) <$> arEvaluation env a <*> arEvaluation env b --Applicative
+arEvaluation env (Difference a b) = (-) <$> arEvaluation env a <*> arEvaluation env b
+arEvaluation env (Multiplied_by a b) = (*) <$> arEvaluation env a <*> arEvaluation env b
 
 boolEvaluation :: Environment -> boolExp -> Maybe Bool
-boolEvaluation _ (Boolean b) = Just b
+boolEvaluation _ (T_Boolean b) = Just b
 boolEvaluation env (BoolId s) =
   case get env s of
     Just (T_Boolean v) -> Just v
     Just _ -> error "Mismatching Types!"
     Nothing -> error "No variable was found!"
-boolEvaluation env (LessThan a b) = pure (<) <*> (arithExprEval env a) <*> (arithExprEval env b)
-boolEvaluation env (GreaterThan a b) = pure (>) <*> (arithExprEval env a) <*> (arithExprEval env b)
-boolEvaluation env (EqualTo a b) = pure (==) <*> (arithExprEval env a) <*> (arithExprEval env b)
-boolEvaluation env (NotEqualTo a b) = pure (/=) <*> (arithExprEval env a) <*> (arithExprEval env b)
-boolEvaluation env (LessEqualThan a b) = pure (<=) <*> (arithExprEval env a) <*> (arithExprEval env b)
-boolEvaluation env (GreaterEqualThan a b) = pure (>=) <*> (arithExprEval env a) <*> (arithExprEval env b)
+boolEvaluation env (LessThan a b) = pure (<) <*> (arEvaluation env a) <*> (arEvaluation env b)
+boolEvaluation env (GreaterThan a b) = pure (>) <*> (arEvaluation env a) <*> (arEvaluation env b)
+boolEvaluation env (EqualTo a b) = pure (==) <*> (arEvaluation env a) <*> (arEvaluation env b)
+boolEvaluation env (NotEqualTo a b) = pure (/=) <*> (arEvaluation env a) <*> (arEvaluation env b)
+boolEvaluation env (LessEqualThan a b) = pure (<=) <*> (arEvaluation env a) <*> (arEvaluation env b)
+boolEvaluation env (GreaterEqualThan a b) = pure (>=) <*> (arEvaluation env a) <*> (arEvaluation env b)
 boolEvaluation env (AND a b) = pure (&&) <*> (boolEvaluation env a) <*> (boolEvaluation env b)
 boolEvaluation env (OR a b) = pure (||) <*> (boolEvaluation env a) <*> (boolEvaluation env b)
 boolEvaluation env (NOT a) = not <$> boolEvaluation env a      
@@ -54,62 +53,62 @@ boolEvaluation env (NOT a) = not <$> boolEvaluation env a
 
 programExec :: Environment -> [Command] -> Environment
 
-programExec env [] = env
+programExec progExe [] = progExe
 
-programExec env (Skip : cs) = programExec env cs
-programExec env ((ArDeclaration s ex) : cs) =
-  case arEvaluation env ex of
-    Just ex' -> case get env s of
+programExec progExe (Skip : cs) = programExec progExe cs
+programExec progExe ((ArDeclaration s ex) : cs) =
+  case arEvaluation progExe ex of
+    Just ex' -> case get progExe s of
       Just _ -> error "Another Declaration Was Found!"
-      Nothing -> programExec (insert env s (Integer ex')) cs
+      Nothing -> programExec (insert progExe s (Integer ex')) cs
     Nothing -> error "Arithmetic Expression Was Invalid"
 
-programExec env ((BoolDeclaration s ex) : cs) =
-  case boolEvaluation env ex of
-    Just ex' -> case get env s of
+programExec progExe ((BoolDeclaration s ex) : cs) =
+  case boolEvaluation progExe ex of
+    Just ex' -> case get progExe s of
       Just _ -> error "Another Declaration Was Found!"
-      Nothing -> programExec (insert env s (T_Boolean ex')) cs
+      Nothing -> programExec (insert progExe s (T_Boolean ex')) cs
     Nothing -> error "Boolean Expression Was Invalid"
 
-programExec env ((ArDeclaration s i) : cs) =
-  case get env s of
+programExec progExe ((ArDeclaration s i) : cs) =
+  case get progExe s of
     Just _ -> error "Another Declaration Was Found!"
-    Nothing -> programExec (insert env s (stack (stackDeclaration j))) cs
-    where Just j = arEvaluation env i
+    Nothing -> programExec (insert progExe s (stack (stackDeclaration j))) cs
+    where Just j = arEvaluation progExe i
 
-programExec env ((ArAssignment s ex) : cs) =
-  case get env s of
-    Just (Integer _) -> programExec (insert env s (Integer ex')) cs
+programExec progExe ((ArAssignment s ex) : cs) =
+  case get progExe s of
+    Just (T_Integer _) -> programExec (insert progExe s (T_Integer ex')) cs
       where
-        Just ex' = arEvaluation env ex
+        Just ex' = arEvaluation progExe ex
     Just _ -> error "Mismatching Types!"
     Nothing -> error "No variable was found!"
 
-programExec env ((BoolAssignment s ex) : cs) =
-  case get env s of
-    Just (T_Boolean _) -> programExec (insert env s (bool ex')) cs
+programExec progExe ((BoolAssignment s ex) : cs) =
+  case get progExe s of
+    Just (T_Boolean _) -> programExec (insert progExe s (bool ex')) cs
       where
-        Just ex' = boolEvaluation env ex
+        Just ex' = boolEvaluation progExe ex
     Just _ -> error "Mismatching Types!"
     Nothing -> error "No variable was found!"
 
-programExec env ((ArAssignment s i ex) : cs) =
-  case get env s of
-    Just (T_Stack a) -> programExec (insert env s (stack (push a j ex'))) cs
+programExec progExe ((ArAssignment s i ex) : cs) =
+  case get progExe s of
+    Just (T_Stack a) -> programExec (insert progExe s (stack (push a j ex'))) cs
       where
-        Just ex' = arEvaluation env ex
-        Just j = arEvaluation env i
+        Just ex' = arEvaluation progExe ex
+        Just j = arEvaluation progExe i
     Just _ -> error "Mismatching Types!"
     Nothing -> error "No variable was found!"
 
-programExec env ((IfThenElse b nc nc') : cs) =
-  case boolEvaluation env b of
-    Just True -> programExec env (nc ++ cs)
-    Just False -> programExec env (nc' ++ cs)
+programExec progExe ((IfElse b nc nc') : cs) =
+  case boolEvaluation progExe b of
+    Just True -> programExec progExe (nc ++ cs)
+    Just False -> programExec progExe (nc' ++ cs)
     Nothing -> error "Boolean Expression Was Invalid"
 
-programExec env ((Whiledo b c) : cs) =
-  case boolEvaluation env b of
-    Just True -> programExec env (c ++ [While b c] ++ cs)
-    Just False -> programExec env cs
+programExec progExe ((Whiledo b c) : cs) =
+  case boolEvaluation progExe b of
+    Just True -> programExec progExe (c ++ [While b c] ++ cs)
+    Just False -> programExec progExe cs
     Nothing -> error "Boolean Expression Was Invalid"
