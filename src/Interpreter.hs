@@ -1,10 +1,10 @@
-module Interpreter where
-import Grammar
-import Parser
-
 -- Antonio Curci
 -- Mat. 761049
 -- CurcIMP, FMCS 2021-2022
+
+module Interpreter where
+import Grammar
+import Parser
 
 -- Each variable has two fields: name and value.
 data Variable = Variable {name  :: String,

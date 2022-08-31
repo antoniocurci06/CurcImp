@@ -6,8 +6,8 @@ module Main where
 import System.IO
 import Stack
 import Interpreter
-import Grammar
-import Parser
+
+
 
 main :: IO ()
 main = do

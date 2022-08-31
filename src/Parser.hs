@@ -1,34 +1,53 @@
-module Parser where
-import Grammar
-
 -- Antonio Curci
 -- Mat. 761049
 -- CurcIMP, FMCS 2021-2022
 
+module Parser where
+import Grammar
+
+
+--import Prelude hiding (fmap, pure)
 
 -- Parser declaration
 newtype Parser a = P (String -> [(a,String)]) 
+parse :: Parser a -> String -> [(a, String)]
+parse (P p) inp = p inp
+
+item :: Parser Char  
+item =
+    P (\input -> case input of 
+        [] -> []
+        (x : xs) -> [(x, xs)]) 
 
 instance Functor Parser where
--- fmap :: (a -> b) -> Parser a -> Parser b 
-fmap g p = P (\inp -> case parse p inp of
-  [] -> []
-  [(v,out)] -> [(g v, out)])
+--fmap :: (a -> b) -> Parser a -> Parser b
+  fmap g p = P (\inp -> case parse p inp of
+              [] -> []
+              [(v,out)] -> [(g v, out)])
 
 instance Applicative Parser where 
--- pure :: a -> Parser a
-pure v = P (\inp -> [(v,inp)])
+--pure :: a -> Parser a
+  pure v = P (\inp -> [(v,inp)])
+
 -- <*> :: Parser (a -> b) -> Parser a -> Parser b 
-pg <*> px = P (\inp -> case parse pg inp of
-          [] -> []
-          [(g,out)] -> parse (fmap g px) out)
+  pg <*> px = P (\inp -> case parse pg inp of
+            [] -> []
+            [(g,out)] -> parse (fmap g px) out)
 
 instance Monad Parser where
--- (>>=) :: Parser a -> (a -> Parser b) -> Parser b 
-p >>= f = P (\inp -> case parse p inp of
-  [] -> []
-  [(v,out)] -> parse (f v) out)
+  --(>>=) :: Parser a -> (a -> Parser b) -> Parser b 
+  p >>= f = P (\inp -> case parse p inp of
+            [] -> []
+            [(v,out)] -> parse (f v) out)
 
+instance Alternative Parser where 
+  -- empty :: Parser a
+  empty = P (\inp -> [])
+  
+  -- (<|>) :: Parser a -> Parser a -> Parser a 
+  p <|> q = P (\inp -> case parse p inp of
+            [] -> parse q inp 
+            [(v,out)] -> [(v,out)])
 
 class Monad f => Alternative f where
   empty :: f a
@@ -52,22 +71,8 @@ class Monad f => Alternative f where
   --many x = some x <|> pure []
 --  some x = pure (:) <*> x <*> many x
 
-instance Alternative Parser where 
-    -- empty :: Parser a
-    empty = P (\inp -> [])
-    -- (<|>) :: Parser a -> Parser a -> Parser a 
-    p <|> q = P (\inp -> case parse p inp of
-        [] -> parse q inp 
-        [(v,out)] -> [(v,out)])
-
 
 -- Derived Primitives, 13.6 from the Haskell Book
-
-item :: Parser Char  
-item =
-    P (\input -> case input of 
-        [] -> []
-        (x : xs) -> [(x, xs)]) 
 
 -- General Operator
 sat :: (Char -> Bool) -> Parser Char 
@@ -83,8 +88,7 @@ digit :: Parser Char
 digit = sat isDigit
 
 isDigit :: Char -> Bool
-isDigit c = c `elem` digits
-
+isDigit c = elem c digitSet
 
 -- Chars handling
 lowerSet :: [Char]
@@ -94,7 +98,7 @@ lower :: Parser Char
 lower = sat isLower
 
 isLower :: Char -> Bool
-isLower c = c `elem` lower
+isLower c = elem c lowerSet
 
 upperSet :: [Char] 
 upperSet = ['A' .. 'Z']
@@ -103,19 +107,19 @@ upper :: Parser Char
 upper = sat isUpper
 
 isUpper :: Char -> Bool
-isUpper c = c `elem` upper
+isUpper c = elem c upperSet
 
 letterSet :: Parser Char 
 letterSet = sat isAlpha
 
 isAlpha :: Char -> Bool
-isAlpha = c `elem` upper || c `elem` lower
+isAlpha c = elem c upper || elem c lower
 
 alphanum :: Parser Char 
 alphanum = sat isAlphaNum
 
 isAlphanum :: Char -> Bool
-isAlphanum = c `elem` upper || c `elem` lower || c `elem` digits
+isAlphanum c = elem c upper || elem c lower || elem c digitSet
 
 char :: Char -> Parser Char 
 char x = sat (== x)
@@ -132,7 +136,8 @@ string (x:xs) = do
 ident :: Parser String 
 ident = do 
     x <- lower
-    xs <- many alphanum return (x:xs)
+    xs <- many alphanum 
+    return (x:xs)
 
 -- Natural numbers
 nat :: Parser Int
@@ -155,11 +160,11 @@ int = do
     <|> nat
 
 -- Handling Spacing
-space :: [Char]
-space = ['\n', '\t', '\r', ' ']
+spaceSet :: [Char]
+spaceSet = ['\n', '\t', '\r', ' ']
 
 isSpace :: Char -> Bool
-isSpace x = elem ´x´ space
+isSpace x = elem x spaceSet
 
 token :: Parser a -> Parser a 
 token p = do 
@@ -227,7 +232,7 @@ arFactor = do
             symbol ")"
             return a
 
-boolFactor :: Parser BoolExpr
+boolFactor :: Parser BoolExp
 boolFactor =
   do
     symbol "True"
@@ -422,12 +427,12 @@ pop =
     return (pop i)
 
 
-parse :: String -> ([Command], String)
-parse s = case p s of
-  [] -> ([], "")
-  [(c, s)] -> (c, s)
-  where
-    (P p) = program
+--parse :: String -> ([Command], String)
+--parse s = case p s of
+  --[] -> ([], "")
+  --[(c, s)] -> (c, s)
+  --where
+   -- (P p) = program
 
 
 parseFailed :: ([Command], String) -> Bool
