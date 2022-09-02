@@ -50,65 +50,88 @@ boolEvaluation env (AND a b) = pure (&&) <*> (boolEvaluation env a) <*> (boolEva
 boolEvaluation env (OR a b) = pure (||) <*> (boolEvaluation env a) <*> (boolEvaluation env b)
 boolEvaluation env (NOT a) = not <$> boolEvaluation env a      
 
+execProgr :: Environment -> [Command] -> Environment
 
-programExec :: Environment -> [Command] -> Environment
+execProgr e [] = e 
 
-programExec progExe [] = progExe
+execProgr e  (Skip : cs) = execProgr e cs
 
-programExec progExe (Skip : cs) = programExec progExe cs
-programExec progExe ((ArDeclaration s ex) : cs) =
-  case arEvaluation progExe ex of
-    Just ex' -> case get progExe s of
-      Just _ -> error "Another Declaration Was Found!"
-      Nothing -> programExec (insert progExe s (Integer ex')) cs
-    Nothing -> error "Arithmetic Expression Was Invalid"
+execProgr e ((IfElse b nc nc') : cs) =
+        case boolEvaluation e b of
+                Just True -> execProgr e (nc ++ cs)
+                Just False-> execProgr e (nc'++ cs)
+                Nothing -> error "If Then Else Construct Produced an Error"
 
-programExec progExe ((BoolDeclaration s ex) : cs) =
-  case boolEvaluation progExe ex of
-    Just ex' -> case get progExe s of
-      Just _ -> error "Another Declaration Was Found!"
-      Nothing -> programExec (insert progExe s (T_Boolean ex')) cs
-    Nothing -> error "Boolean Expression Was Invalid"
 
-programExec progExe ((ArDeclaration s i) : cs) =
-  case get progExe s of
-    Just _ -> error "Another Declaration Was Found!"
-    Nothing -> programExec (insert progExe s (stack (stackDeclaration j))) cs
-    where Just j = arEvaluation progExe i
+execProgr e ((Whiledo b nc) : cs) =
+        case boolEvaluation e b of
+                Just True -> execProgr e (nc ++ [(Whiledo b nc)] ++ cs)
+                Just False -> execProgr e cs
+                Nothing -> error "While Construct Produced an Error"
 
-programExec progExe ((ArAssignment s ex) : cs) =
-  case get progExe s of
-    Just (T_Integer _) -> programExec (insert progExe s (T_Integer ex')) cs
-      where
-        Just ex' = arEvaluation progExe ex
-    Just _ -> error "Mismatching Types!"
+execProgr e ((ArAssignment s a) : cs ) =
+        case searchVariable e s of
+                Just (T_Integer _ ) -> execProgr (modifyEnv e var) cs
+                               where var = Variable s (T_Integer z)
+                                        where Just z = arEvaluation e a
+                Just _ -> error "Mismatch in types was found"
+                Nothing -> error "Error in Assignment" 
+
+
+execProgr e ((BoolAssign s b) : cs ) =
+        case searchVariable e s of
+                Just (T_Boolean _ ) -> execProgr (modifyEnv e var) cs
+                               where var = Variable s (T_Boolean z)
+                                        where Just z = boolEvaluation e b
+                Just _ -> error "Mismatching Types!"
+                Nothing -> error "Error assign" 
+
+execProgr e ((ArDeclaration s a ) : cs ) =
+        case arEvaluation e a of
+                Just exp -> case searchVariable e s of
+                        Just _ -> error "Variable Already Declared"
+                        Nothing -> execProgr (modifyEnv e var) cs
+                               where var = Variable s (T_Integer z)
+                                        where Just z = arEvaluation e a
+                Nothing -> error "Declaration Produced an Error"
+
+execProgr e ((BoolDeclare s a ) : cs ) =
+        case boolEvaluation e a of
+                Just exp -> case searchVariable e s of
+                        Just _ -> error "Variable Already Declared"
+                        Nothing -> execProgr (modifyEnv e var) cs
+                               where var = Variable s (T_Boolean z)
+                                        where Just z = boolEvaluation e a
+                Nothing -> error "Declaration Produced an Error"
+
+
+execProgr e ((StackAssignment s i a) : cs ) =
+        case searchVariable e s of
+                Just (T_Stack x ) -> execProgr (modifyEnv e var) cs
+                               where var = Variable s (T_Stack z)
+                                        where z = insertElemArray x j a' 
+                                                where   
+                                                        Just a'= arEvaluation e a 
+                                                        Just j = arEvaluation e i
+                Just _ -> error "Mismatching Types!"
+                Nothing -> error "Error assign" 
+
+
+execProgr e ((StackDeclaration s a) : cs ) =
+        case searchVariable e s of
+                Just _ -> error "Variable Already Declared"
+                Nothing -> execProgr (modifyEnv e var) cs
+                         where var = Variable s (T_Stack z)
+                                 where z = stackDeclaration j 
+                                        where Just j = arEvaluation e a
+                Nothing -> error "Declaration Produced an Error"
+
+execProgr env ((ArrFullAssign v exp) : cs) =
+  case searchVariable env v of
+    Just (T_Stack a) -> case arrExprEval env exp of
+                            Just b -> if length a == length  b 
+                            then
+                                execProgr (modifyEnv env (Variable v (T_Stack b))) cs
+                            else error "Length not valid!"
+                            Nothing -> error "aExp evaluation of array failed"
     Nothing -> error "No variable was found!"
-
-programExec progExe ((BoolAssignment s ex) : cs) =
-  case get progExe s of
-    Just (T_Boolean _) -> programExec (insert progExe s (bool ex')) cs
-      where
-        Just ex' = boolEvaluation progExe ex
-    Just _ -> error "Mismatching Types!"
-    Nothing -> error "No variable was found!"
-
-programExec progExe ((ArAssignment s i ex) : cs) =
-  case get progExe s of
-    Just (T_Stack a) -> programExec (insert progExe s (stack (push a j ex'))) cs
-      where
-        Just ex' = arEvaluation progExe ex
-        Just j = arEvaluation progExe i
-    Just _ -> error "Mismatching Types!"
-    Nothing -> error "No variable was found!"
-
-programExec progExe ((IfElse b nc nc') : cs) =
-  case boolEvaluation progExe b of
-    Just True -> programExec progExe (nc ++ cs)
-    Just False -> programExec progExe (nc' ++ cs)
-    Nothing -> error "Boolean Expression Was Invalid"
-
-programExec progExe ((Whiledo b c) : cs) =
-  case boolEvaluation progExe b of
-    Just True -> programExec progExe (c ++ [While b c] ++ cs)
-    Just False -> programExec progExe cs
-    Nothing -> error "Boolean Expression Was Invalid"
