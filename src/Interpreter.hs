@@ -5,6 +5,7 @@
 module Interpreter where
 import Grammar
 import Parser
+import Stack
 
 -- Each variable has two fields: name and value.
 data Variable = Variable {name  :: String,  value :: Value } deriving Show
@@ -14,6 +15,24 @@ type Environment = [Variable]
 
 emptyState :: Environment
 emptyState = empty
+
+-- This modifies the Environment after some modification to variables.
+
+modifyEnv :: Environment -> Variable -> Environment 
+modifyEnv [] var = [var]
+modifyEnv (x:xs) newVar = if (name x) == (name newVar) then [
+    newVar] ++ xs 
+                        else[x] ++ modifyEnv xs newVar
+
+
+-- This returns the value of the variable 
+
+searchVariable:: Environment -> String-> Maybe Value
+searchVariable [] varname = Nothing
+searchVariable (x:xs) varname = if (name x) == varname
+        then Just (value x)
+                                else searchVariable xs
+                                varname
 
 arEvaluation :: Environment -> ArExp -> Maybe Int
 arEvaluation _ (Constant i) = Just i  
@@ -25,7 +44,7 @@ arEvaluation env (ArId s) =
 
 arEvaluation env (Stack s i) =
   case value s of
-    Just (T_Stack a) -> Just (readArray a j)
+    Just (T_Stack a) -> Just (readAll a j)
       where Just j = arEvaluation env i 
     Just _ -> error "Mismatching Types!"
     Nothing -> error "No variable was found!"
@@ -58,7 +77,7 @@ execProgr e [] = e
 
 execProgr e  (Skip : cs) = execProgr e cs
 
-execProgr e ((BoolAssign s b) : cs ) =
+execProgr e ((BoolAssignment s b) : cs ) =
         case searchVariable e s of
                 Just (T_Boolean _ ) -> execProgr (modifyEnv e var) cs
                                where var = Variable s (T_Boolean z)
@@ -75,7 +94,7 @@ execProgr e ((ArDeclaration s a ) : cs ) =
                                         where Just z = arEvaluation e a
                 Nothing -> error "Declaration Produced an Error"
 
-execProgr e ((BoolDeclare s a ) : cs ) =
+execProgr e ((BoolDeclaration s a ) : cs ) =
         case boolEvaluation e a of
                 Just exp -> case searchVariable e s of
                         Just _ -> error "Variable Already Declared"
@@ -84,12 +103,12 @@ execProgr e ((BoolDeclare s a ) : cs ) =
                                         where Just z = boolEvaluation e a
                 Nothing -> error "Declaration Produced an Error"
 
-
+{-- 
 execProgr e ((StackAssignment s i a) : cs ) =
         case searchVariable e s of
                 Just (T_Stack x ) -> execProgr (modifyEnv e var) cs
                                where var = Variable s (T_Stack z)
-                                        where z = insertElemArray x j a' 
+                                        where z = push x j a' 
                                                 where   
                                                         Just a'= arEvaluation e a 
                                                         Just j = arEvaluation e i
@@ -106,7 +125,7 @@ execProgr e ((StackDeclaration s a) : cs ) =
                                         where Just j = arEvaluation e a
                 Nothing -> error "Declaration Produced an Error"
 
-execProgr env ((ArrFullAssign v exp) : cs) =
+execProgr env ((StackAssignment v exp) : cs) =
   case searchVariable env v of
     Just (T_Stack a) -> case arrExprEval env exp of
                             Just b -> if length a == length  b 
@@ -115,3 +134,5 @@ execProgr env ((ArrFullAssign v exp) : cs) =
                             else error "Length not valid!"
                             Nothing -> error "aExp evaluation of array failed"
     Nothing -> error "No variable was found!"
+
+    --}
