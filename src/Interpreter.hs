@@ -15,31 +15,33 @@ type Environment = [Variable]
 emptyState :: Environment
 emptyState = empty
 
-arEvaluation :: Environment -> arExp -> Maybe Integer
+arEvaluation :: Environment -> ArExp -> Maybe Int
 arEvaluation _ (Constant i) = Just i  
 arEvaluation env (ArId s) =
-  case get env s of
+  case value s of
     Just (T_Integer v) -> Just v
     Just _ -> error "Mismatching Types!"
     Nothing -> error "No variable was found!"
 
 arEvaluation env (Stack s i) =
-  case get env s of
+  case value s of
     Just (T_Stack a) -> Just (readArray a j)
       where Just j = arEvaluation env i 
     Just _ -> error "Mismatching Types!"
     Nothing -> error "No variable was found!"
-arEvaluation env (Sum a b) = (+) <$> arEvaluation env a <*> arEvaluation env b --Applicative
+
+arEvaluation env (Sum a b) = (+) <$> arEvaluation env a <*> arEvaluation env b
 arEvaluation env (Difference a b) = (-) <$> arEvaluation env a <*> arEvaluation env b
 arEvaluation env (Multiplied_by a b) = (*) <$> arEvaluation env a <*> arEvaluation env b
 
-boolEvaluation :: Environment -> boolExp -> Maybe Bool
+boolEvaluation :: Environment -> BoolExp -> Maybe Bool
 boolEvaluation _ (T_Boolean b) = Just b
 boolEvaluation env (BoolId s) =
-  case get env s of
+  case value s of
     Just (T_Boolean v) -> Just v
     Just _ -> error "Mismatching Types!"
     Nothing -> error "No variable was found!"
+
 boolEvaluation env (LessThan a b) = pure (<) <*> (arEvaluation env a) <*> (arEvaluation env b)
 boolEvaluation env (GreaterThan a b) = pure (>) <*> (arEvaluation env a) <*> (arEvaluation env b)
 boolEvaluation env (EqualTo a b) = pure (==) <*> (arEvaluation env a) <*> (arEvaluation env b)
@@ -55,28 +57,6 @@ execProgr :: Environment -> [Command] -> Environment
 execProgr e [] = e 
 
 execProgr e  (Skip : cs) = execProgr e cs
-
-execProgr e ((IfElse b nc nc') : cs) =
-        case boolEvaluation e b of
-                Just True -> execProgr e (nc ++ cs)
-                Just False-> execProgr e (nc'++ cs)
-                Nothing -> error "If Then Else Construct Produced an Error"
-
-
-execProgr e ((Whiledo b nc) : cs) =
-        case boolEvaluation e b of
-                Just True -> execProgr e (nc ++ [(Whiledo b nc)] ++ cs)
-                Just False -> execProgr e cs
-                Nothing -> error "While Construct Produced an Error"
-
-execProgr e ((ArAssignment s a) : cs ) =
-        case searchVariable e s of
-                Just (T_Integer _ ) -> execProgr (modifyEnv e var) cs
-                               where var = Variable s (T_Integer z)
-                                        where Just z = arEvaluation e a
-                Just _ -> error "Mismatch in types was found"
-                Nothing -> error "Error in Assignment" 
-
 
 execProgr e ((BoolAssign s b) : cs ) =
         case searchVariable e s of
