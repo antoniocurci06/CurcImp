@@ -3,8 +3,9 @@
 -- CurcIMP, FMCS 2021-2022
 
 module Interpreter where
-import Grammar
 import Stack (pop, push, readAll, top)
+import Grammar
+
 
 -- Each variable has two fields: name and value.
 data Variable = Variable {name  :: String,  value :: Value } deriving Show

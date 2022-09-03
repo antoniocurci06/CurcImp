@@ -62,6 +62,7 @@ data Command =
     | StackAssignment String ArExp ArExp     
     | Push String ArExp
     | Pop String
+    deriving Show
 
 -- Program
 type Program = [Command]

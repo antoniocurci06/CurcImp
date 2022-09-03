@@ -6,73 +6,55 @@ module Parser where
 import Grammar
 import Interpreter
 
---import Prelude hiding (fmap, pure)
-
 -- Parser declaration
 newtype Parser a = P (String -> [(a,String)]) 
 
-{--
-parse :: Parser a -> String -> [(a, String)]
-parse (P p) inp = p inp
---}
+instance Functor Parser where 
+    -- fmap :: (a -> b) -> Parser a -> Parser b
+    fmap g (P p) = P (\input -> case p input of 
+        [] -> []
+        [(v, out)] -> [(g v, out)]) 
 
+instance Applicative Parser where                     
+    --pure :: a -> Parser a 
+    pure v = P(\input -> [(v, input)])                
 
-
-instance Functor Parser where
---fmap :: (a -> b) -> Parser a -> Parser b
-  fmap g p = P (\inp -> case parse p inp of
-      [] -> []
-      [(v,out)] -> [(g v, out)])
-
-instance Applicative Parser where 
---pure :: a -> Parser a
-  pure v = P (\inp -> [(v,inp)])
-
--- <*> :: Parser (a -> b) -> Parser a -> Parser b 
-  pg <*> px = P (\inp -> case parse pg inp of
-            [] -> []
-            [(g,out)] -> parse (fmap g px) out)
-
-instance Monad Parser where
-  --(>>=) :: Parser a -> (a -> Parser b) -> Parser b 
-  p >>= f = P (\inp -> case parse p inp of
-            [] -> []
-            [(v,out)] -> parse (f v) out)
-
-instance Alternative Parser where 
-  -- empty :: Parser a
-  empty = P (\inp -> [])
+    -- <*> :: Parser (a -> b) -> Parser a -> Parser b
+    (P pg) <*> px = P(\input -> case pg input of  
+                [] -> []                              
+                [(g, out)] -> case fmap g px of        
+                                (P p) -> p out)                                     
   
-  -- (<|>) :: Parser a -> Parser a -> Parser a 
-  p <|> q = P (\inp -> case parse p inp of
-            [] -> parse q inp 
-            [(v,out)] -> [(v,out)])
-
-class Monad f => Alternative f where
+instance Monad Parser where                         
+    -- (>>=) :: Parser a -> (a -> Parser b) -> Parser b
+    (P p) >>= f = P (\input -> case p input of 
+                    [] -> []                    -- fail if the application fails
+                    [(v, out)] -> case f v of   -- apply f to the result v to give another parser f v 
+                                (P p) -> p out)
+                    
+class Monad f => Alternative f where  
   empty :: f a
   (<|>) :: f a -> f a -> f a
-
   many :: f a -> f [a]
   some :: f a -> f [a]
   many x = some x <|> pure []
   some x = pure (:) <*> x <*> many x
   chain :: f a -> f (a -> a -> a) -> f a          -- chain operator
   chain p op = do a <- p; rest a
-    where
-      rest a = (do f <- op; b <- p; rest (f a b)) <|> return a
+        where
+            rest a = (do f <- op; b <- p; rest (f a b)) <|> return a
 
---class Applicative f => Alternative f where 
---  empty :: f a
-  --(<|>) :: f a -> f a -> f a
-  --many :: f a -> f [a]
-  --some :: f a -> f [a]
 
-  --many x = some x <|> pure []
---  some x = pure (:) <*> x <*> many x
+instance Alternative Parser where     
+  empty = P (const [])
 
+  (P p) <|> (P q) =
+    P( \input -> case p input of
+          [] -> q input
+          [(v, out)] -> [(v, out)]
+      )
 
 -- Derived Primitives, 13.6 from the Haskell Book
-
 -- General Operator
 
 item :: Parser Char  
@@ -449,7 +431,6 @@ pop =
     symbol ")"
     return (Pop i)
 
-
 parse :: String -> ([Command], String)
 parse s = case p s of
   [] -> ([], "")
@@ -467,5 +448,3 @@ getParsedCommands (c, _) = c
 
 getRemainingInput :: ([Command], String) -> String
 getRemainingInput (_, s) = s
-
-
