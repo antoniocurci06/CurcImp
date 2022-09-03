@@ -4,8 +4,7 @@
 
 module Interpreter where
 import Grammar
-import Parser
-import Stack
+import Stack (pop, push, readAll, top)
 
 -- Each variable has two fields: name and value.
 data Variable = Variable {name  :: String,  value :: Value } deriving Show
@@ -13,9 +12,10 @@ data Variable = Variable {name  :: String,  value :: Value } deriving Show
 -- Environment
 type Environment = [Variable]
 
+{--
 emptyState :: Environment
 emptyState = empty
-
+--}
 -- This modifies the Environment after some modification to variables.
 
 modifyEnv :: Environment -> Variable -> Environment 
@@ -36,15 +36,15 @@ searchVariable (x:xs) varname = if (name x) == varname
 
 arEvaluation :: Environment -> ArExp -> Maybe Int
 arEvaluation _ (Constant i) = Just i  
-arEvaluation env (ArId s) =
-  case value s of
+arEvaluation env (ArId i) =
+  case searchVariable env i of
     Just (T_Integer v) -> Just v
     Just _ -> error "Mismatching Types!"
     Nothing -> error "No variable was found!"
 
-arEvaluation env (Stack s i) =
-  case value s of
-    Just (T_Stack a) -> Just (readAll a j)
+arEvaluation env (StackId s i) =
+  case searchVariable env s of
+    Just (T_Stack a) -> Just (top a)
       where Just j = arEvaluation env i 
     Just _ -> error "Mismatching Types!"
     Nothing -> error "No variable was found!"
@@ -54,9 +54,9 @@ arEvaluation env (Difference a b) = (-) <$> arEvaluation env a <*> arEvaluation 
 arEvaluation env (Multiplied_by a b) = (*) <$> arEvaluation env a <*> arEvaluation env b
 
 boolEvaluation :: Environment -> BoolExp -> Maybe Bool
-boolEvaluation _ (T_Boolean b) = Just b
+boolEvaluation _ (Bool b) = Just b
 boolEvaluation env (BoolId s) =
-  case value s of
+  case searchVariable env s of
     Just (T_Boolean v) -> Just v
     Just _ -> error "Mismatching Types!"
     Nothing -> error "No variable was found!"

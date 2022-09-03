@@ -4,26 +4,25 @@
 
 module Parser where
 import Grammar
-
+import Interpreter
 
 --import Prelude hiding (fmap, pure)
 
 -- Parser declaration
 newtype Parser a = P (String -> [(a,String)]) 
+
+{--
 parse :: Parser a -> String -> [(a, String)]
 parse (P p) inp = p inp
+--}
 
-item :: Parser Char  
-item =
-    P (\input -> case input of 
-        [] -> []
-        (x : xs) -> [(x, xs)]) 
+
 
 instance Functor Parser where
 --fmap :: (a -> b) -> Parser a -> Parser b
   fmap g p = P (\inp -> case parse p inp of
-              [] -> []
-              [(v,out)] -> [(g v, out)])
+      [] -> []
+      [(v,out)] -> [(g v, out)])
 
 instance Applicative Parser where 
 --pure :: a -> Parser a
@@ -75,6 +74,13 @@ class Monad f => Alternative f where
 -- Derived Primitives, 13.6 from the Haskell Book
 
 -- General Operator
+
+item :: Parser Char  
+item =
+    P (\input -> case input of 
+        [] -> []
+        (x : xs) -> [(x, xs)]) 
+
 sat :: (Char -> Bool) -> Parser Char 
 sat p = do 
   x <- item
@@ -229,7 +235,7 @@ arFactor = do
                 symbol "["      
                 n <- arExp  
                 symbol "]"
-                return (Stack i n)
+                return (StackId i n)
                 <|> return (ArId i) 
         <|> do
             symbol "("                   
@@ -444,12 +450,12 @@ pop =
     return (Pop i)
 
 
---parse :: String -> ([Command], String)
---parse s = case p s of
-  --[] -> ([], "")
-  --[(c, s)] -> (c, s)
-  --where
-   -- (P p) = program
+parse :: String -> ([Command], String)
+parse s = case p s of
+  [] -> ([], "")
+  [(c, s)] -> (c, s)
+  where
+    (P p) = program
 
 
 parseFailed :: ([Command], String) -> Bool

@@ -16,7 +16,7 @@ data Value =
 data ArExp =
         Constant Int
         | ArId String  
-        | Stack String ArExp
+        | StackId String ArExp
         | Sum ArExp ArExp
         | Difference ArExp ArExp
         | Multiplied_by ArExp ArExp
@@ -27,6 +27,11 @@ data ArExp =
 data StringExp = 
     StringId String
     | Concatenation StringExp StringExp
+
+data StackExp = 
+    Stack [ArExp]
+    | StackVarId String
+    deriving Show
 
 
 -- Boolean Expressions

@@ -6,8 +6,8 @@ module Main where
 import System.IO
 import Stack
 import Interpreter
-
-
+import Grammar
+import Parser
 
 main :: IO ()
 main = do
@@ -22,7 +22,7 @@ main = do
 
 validate :: String -> Maybe Int                          -- This function validates the inserted choice, if it's valid or not. 
 validate s = isValid (reads s)
-   where isValid [] = Nothing
+   where isValid []            = Nothing
          isValid ((n, _):_) 
                | outOfBounds n = Nothing
                | otherwise     = Just n
