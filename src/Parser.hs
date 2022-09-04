@@ -186,16 +186,16 @@ arExp  :: Parser ArExp
 arExp = do chain arTerm op
     where                        
       op = 
-          (do symbol "+"; return Sum)
-          <|> do symbol "-"; return Difference 
+          (do symbol "added to"; return Sum)
+          <|> do symbol "subtracted to"; return Difference 
 
 arTerm :: Parser ArExp       
 arTerm = do chain arFactor op     
     where 
       op = 
-        (do symbol "*"; return Multiplied_by)
-        <|> (do symbol "/"; return Divided_by)
-        <|> do symbol "^"; return Power
+        (do symbol "multiplied by"; return Multiplied_by)
+        <|> (do symbol "divided by"; return Divided_by)
+        <|> do symbol "to the power of"; return Power
 
 {--stringExp :: Parser StringExp
 stringExp = 
@@ -256,27 +256,27 @@ boolFactor =
     <|> do 
         a1 <- arExp 
         do
-            symbol "<"
+            symbol "is less than"
             a2 <- arExp 
             return (LessThan a1 a2)
             <|> do
-              symbol ">"
+              symbol "is greater than"
               a2 <- arExp 
               return (GreaterThan a1 a2)
             <|> do
-              symbol "<="
+              symbol "is less or equal to"
               a2 <- arExp 
               return (LessEqualThan a1 a2)
             <|> do
-              symbol ">="
+              symbol "is greater or equal to"
               a2 <- arExp 
               return (GreaterEqualThan a1 a2)
             <|> do
-              symbol "=="
+              symbol "is equal to"
               a2 <- arExp 
               return (EqualTo a1 a2)
             <|> do
-              symbol "!="
+              symbol "is not equal to"
               a2 <- arExp 
               return (NotEqualTo a1 a2)
     <|> (BoolId <$> identifier) 

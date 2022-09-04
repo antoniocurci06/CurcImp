@@ -13,17 +13,18 @@ data Variable = Variable {name  :: String,  value :: Value } deriving Show
 -- Environment
 type Environment = [Variable]
 
-{--
+
 emptyState :: Environment
-emptyState = empty
---}
+emptyState = mempty
+
 -- This modifies the Environment after some modification to variables.
 
 modifyEnv :: Environment -> Variable -> Environment 
 modifyEnv [] var = [var]
-modifyEnv (x:xs) newVar = if (name x) == (name newVar) then [
-    newVar] ++ xs 
-                        else[x] ++ modifyEnv xs newVar
+modifyEnv (x:xs) newVar =
+        if (name x) == (name newVar)
+                then [newVar] ++ xs
+                else[x] ++ modifyEnv xs newVar
 
 
 -- This returns the value of the variable 
@@ -73,9 +74,7 @@ boolEvaluation env (OR a b) = pure (||) <*> (boolEvaluation env a) <*> (boolEval
 boolEvaluation env (NOT a) = not <$> boolEvaluation env a      
 
 execProgr :: Environment -> [Command] -> Environment
-
 execProgr e [] = e 
-
 execProgr e  (Skip : cs) = execProgr e cs
 
 execProgr e ((BoolAssignment s b) : cs ) =
@@ -94,6 +93,14 @@ execProgr e ((ArDeclaration s a ) : cs ) =
                                where var = Variable s (T_Integer z)
                                         where Just z = arEvaluation e a
                 Nothing -> error "Declaration Produced an Error"
+
+execProgr e ((ArAssignment s a) : cs ) =
+        case searchVariable e s of
+                Just (T_Integer _ ) -> execProgr (modifyEnv e var) cs
+                               where var = Variable s (T_Integer z)
+                                        where Just z = arEvaluation e a
+                Just _ -> error "Mismatching Types!"
+                Nothing -> error "Assignment Produced an Error" 
 
 execProgr e ((BoolDeclaration s a ) : cs ) =
         case boolEvaluation e a of
