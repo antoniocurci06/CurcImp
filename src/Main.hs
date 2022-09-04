@@ -11,6 +11,28 @@ import Parser
 
 main :: IO ()
 main = do
+   putStrLn "Write a program all in one line:"
+   string <- "i=2";
+   let c = parse string
+   if parseFailed c
+      then do
+         putStr "\nParsing failed\n"
+         putStr "\nRemaining input:"
+         print (getRemainingInput c)
+         else do
+            putStrLn "\nParsing success!\n"
+            let s = execProgr [] (getParsedCommands c)
+            putStr "\nInput Program\n"
+            putStr string
+            putStr "\nRepresentation of the program:\n"
+            print (getParsedCommands c)
+            putStr "\nState of the memory:\n"
+            print s 
+
+
+
+{--main :: IO ()
+main = do
       putStrLn . unlines $ map concatNums choices
       choice <- getLine
       case validate choice of
@@ -90,4 +112,4 @@ bar =
 esc = 
   do 
     error "Exit from the program! Goodbye!"
-      
+--}
