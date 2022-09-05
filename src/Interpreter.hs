@@ -3,7 +3,7 @@
 -- CurcIMP, FMCS 2021-2022
 
 module Interpreter where
-import Stack (pop, push, readAll, top)
+import Stack
 import Grammar
 
 
@@ -111,17 +111,17 @@ execProgr e ((BoolDeclaration s a ) : cs ) =
                                         where Just z = boolEvaluation e a
                 Nothing -> error "Declaration Produced an Error"
 
-{-- 
-execProgr e ((StackAssignment s i a) : cs ) =
+
+execProgr e ((Push s a) : cs ) =
         case searchVariable e s of
                 Just (T_Stack x ) -> execProgr (modifyEnv e var) cs
                                where var = Variable s (T_Stack z)
-                                        where z = push x j a' 
+                                        where z = push x a' 
                                                 where   
                                                         Just a'= arEvaluation e a 
-                                                        Just j = arEvaluation e i
                 Just _ -> error "Mismatching Types!"
                 Nothing -> error "Error assign" 
+                
 
 
 execProgr e ((StackDeclaration s a) : cs ) =
@@ -129,10 +129,11 @@ execProgr e ((StackDeclaration s a) : cs ) =
                 Just _ -> error "Variable Already Declared"
                 Nothing -> execProgr (modifyEnv e var) cs
                          where var = Variable s (T_Stack z)
-                                 where z = stackDeclaration j 
+                                 where z = emptyStack j 
                                         where Just j = arEvaluation e a
                 Nothing -> error "Declaration Produced an Error"
 
+{--
 execProgr env ((StackAssignment v exp) : cs) =
   case searchVariable env v of
     Just (T_Stack a) -> case arrExprEval env exp of

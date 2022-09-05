@@ -11,41 +11,41 @@ instance (Show a) => Show (Stack a)
  where
  show (Stack l) = readAll l
 
-push :: a -> Stack a -> Stack a
+push :: -> Stack -> Stack a
 push x (Stack s) = Stack (x:s)
 
-pop :: Stack a -> Maybe (Stack a, a)
+pop :: Stack -> Maybe (Stack a, a)
 pop 
 
 emptyStack :: Stack a
 emptyStack = Stack []
 
-push :: a -> [a] -> ((),[a])  -- return a tuple containing a 'nothing' and a new stack
+push :: -> [a] -> ((),[a])  -- return tuple containing 'nothing' and new stack
 push elem stack = ((), (:) elem stack)
 
-pop :: [a] -> (a, [a])  -- return a tuple containing the popped element and the new stack
+pop :: [a] -> (a, [a])  -- return tuple containing the popped element and the new stack
 pop [] = error "Can't pop from an empty stack!"
 pop ((:) x stack) = (x, stack)
 
 readLast :: Stack -> Int
-readLast [] = error "Empty Array!"
+readLast [] = error "Empty array!"
 readLast stack  = stack head
 
 --}
 
-type Stack a = [a]
+type Stack = [Int]
 
-emptyStack :: Stack a
-emptyStack = []
+emptyStack :: Int -> Stack
+emptyStack a = []
 
-isEmptyStack :: Stack a -> Bool
+isEmptyStack :: Stack -> Bool
 isEmptyStack = null
 
-push :: a -> Stack a -> Stack a
-push = (:)
+push :: Stack -> Int -> Stack
+push xs item = item : xs
 
-top :: Stack a -> a
+top :: Stack -> Int
 top = head
 
-pop :: Stack a -> Stack a
+pop :: Stack -> Stack
 pop = tail

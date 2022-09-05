@@ -228,13 +228,13 @@ arFactor = do
 boolExp :: Parser BoolExp
 boolExp = chain boolTerm op
   where op = do
-            symbol "Or"
+            symbol "OR"
             return OR
 
 boolTerm :: Parser BoolExp
 boolTerm = chain boolFactor op
   where op = do
-            symbol "And"
+            symbol "AND"
             return AND
     
 boolFactor :: Parser BoolExp
@@ -289,7 +289,7 @@ command =
     <|> arDeclaration 
     <|> arAssignment
     <|> boolAssignment
-    <|> stackAssignment
+    -- <|> stackAssignment
     <|> stackDeclaration
     <|> ifElse
     <|> whiledo
@@ -344,6 +344,27 @@ boolAssignment  =
     r <- BoolAssignment  i <$> boolExp
     return r
 
+push :: Parser Command
+push =
+  do 
+    symbol "push"
+    symbol "("
+    i <- identifier
+    symbol ","
+    a <- arExp
+    symbol ")"
+    return (Push i a)
+
+pop :: Parser Command
+pop =
+  do 
+    symbol "pop"
+    symbol"("
+    i <- identifier
+    symbol ")"
+    return (Pop i)
+    
+{--
 stackAssignment  :: Parser Command
 stackAssignment  =
   do
@@ -356,25 +377,26 @@ stackAssignment  =
       r <- StackAssignment  i j <$> arExp 
 
       return r
---      <|>
-  --      do 
-    --      symbol "="
-      --    symbol "["
-        --  j <- arExp
-          --k <- many (do symbol ","; arExp)
-          --symbol "]"
+      <|>
+        do 
+          symbol "="
+          symbol "["
+          j <- arExp
+          k <- many (do symbol ","; arExp)
+          symbol "]"
     
-     --     return (arrFullAssign i (stackId (j:k)))
-   --   <|>
-       -- do 
-         -- symbol "["
-        --  symbol "]"
-         -- symbol "="
-          --x <- identifier
-          --symbol "["
-          --symbol "]"
+          return (arrFullAssign i (stackId (j:k)))
+      <|>
+        do 
+          symbol "["
+          symbol "]"
+          symbol "="
+          x <- identifier
+          symbol "["
+          symbol "]"
     
-          --return (arrFullAssign i (stackId x)) 
+          return (arrFullAssign i (stackId x)) 
+--}
 
 skip  :: Parser Command
 skip  =
@@ -413,23 +435,7 @@ whiledo =
 
     return (Whiledo b p)
 
-push :: Parser Command
-push =
-  do 
-    symbol "push("
-    i <- identifier
-    symbol ","
-    a <- arExp
-    symbol ")"
-    return (Push i a)
 
-pop :: Parser Command
-pop =
-  do 
-    symbol "pop("
-    i <- identifier
-    symbol ")"
-    return (Pop i)
 
 parse :: String -> ([Command], String)
 parse s = case p s of

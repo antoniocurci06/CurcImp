@@ -12,7 +12,7 @@ import Parser
 main :: IO ()
 main = do
    putStrLn "Write a program all in one line:"
-   string <- "i=2";
+   string <- getLine;
    let c = parse string
    if parseFailed c
       then do
